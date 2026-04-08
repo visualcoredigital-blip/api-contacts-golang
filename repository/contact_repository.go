@@ -7,7 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"api-contacts-golang/config"
 	"api-contacts-golang/models"
-
+	"api-contacts-golang/dto"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -74,7 +74,7 @@ func GetContactByID(id string) (models.Contact, error) {
 	return contact, nil
 }
 
-func UpdateContact(id string, contact models.Contact) (models.Contact, error) {
+func UpdateContactPartial(id string, req dto.UpdateContactRequest) (models.Contact, error) {
 	collection := config.DB.Collection("contacts")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -85,15 +85,37 @@ func UpdateContact(id string, contact models.Contact) (models.Contact, error) {
 		return models.Contact{}, err
 	}
 
+	updateFields := bson.M{}
+
+	if req.Nombre != nil {
+		updateFields["nombre"] = *req.Nombre
+	}
+	if req.Email != nil {
+		updateFields["email"] = *req.Email
+	}
+	if req.Telefono != nil {
+		updateFields["telefono"] = bson.M{
+			"codigoPais": req.Telefono.CodigoPais,
+			"numero":     req.Telefono.Numero,
+			"formateado": req.Telefono.Formateado,
+		}
+	}
+	if req.Empresa != nil {
+		updateFields["empresa"] = *req.Empresa
+	}
+	if req.Descripcion != nil {
+		updateFields["descripcion"] = *req.Descripcion
+	}
+	if req.Estado != nil {
+		updateFields["estado"] = *req.Estado
+	}
+
+	if len(updateFields) == 0 {
+		return models.Contact{}, nil
+	}
+
 	update := bson.M{
-		"$set": bson.M{
-			"nombre":      contact.Nombre,
-			"email":       contact.Email,
-			"telefono":    contact.Telefono,
-			"empresa":     contact.Empresa,
-			"descripcion": contact.Descripcion,
-			"estado":      contact.Estado,
-		},
+		"$set": updateFields,
 	}
 
 	_, err = collection.UpdateOne(ctx, bson.M{"_id": objID}, update)
@@ -101,7 +123,6 @@ func UpdateContact(id string, contact models.Contact) (models.Contact, error) {
 		return models.Contact{}, err
 	}
 
-	// devolver actualizado
 	return GetContactByID(id)
 }
 

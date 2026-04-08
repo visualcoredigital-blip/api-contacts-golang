@@ -3,7 +3,8 @@ package handlers
 import (
 	"net/http"
 
-	"api-contacts-golang/models" 
+	"api-contacts-golang/dto"
+	"api-contacts-golang/models"
 	"api-contacts-golang/repository"
 
 	"github.com/gin-gonic/gin"
@@ -22,22 +23,26 @@ func GetContacts(c *gin.Context) {
 }
 
 func CreateContact(c *gin.Context) {
-	var contact models.Contact
+	var req dto.CreateContactRequest
 
-	// Bind JSON
-	if err := c.ShouldBindJSON(&contact); err != nil {
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "JSON inválido",
+			"error": err.Error(),
 		})
 		return
 	}
 
-	// Validación mínima (no lo dejes pasar vacío)
-	if contact.Nombre == "" || contact.Email == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "nombre y email son obligatorios",
-		})
-		return
+	contact := models.Contact{
+		Nombre: req.Nombre,
+		Email:  req.Email,
+		Telefono: models.Telefono{
+			CodigoPais: req.Telefono.CodigoPais,
+			Numero:     req.Telefono.Numero,
+			Formateado: req.Telefono.Formateado,
+		},
+		Empresa:     req.Empresa,
+		Descripcion: req.Descripcion,
+		Estado:      req.Estado,
 	}
 
 	result, err := repository.CreateContact(contact)
@@ -67,16 +72,17 @@ func GetContactByID(c *gin.Context) {
 
 func UpdateContact(c *gin.Context) {
 	id := c.Param("id")
-	var contact models.Contact
 
-	if err := c.ShouldBindJSON(&contact); err != nil {
+	var req dto.UpdateContactRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "JSON inválido",
+			"error": err.Error(),
 		})
 		return
 	}
 
-	updated, err := repository.UpdateContact(id, contact)
+	updated, err := repository.UpdateContactPartial(id, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
