@@ -1,0 +1,28 @@
+# 🔐 Variables de entorno
+.env
+
+# 🧱 Binarios compilados
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# 📦 Archivos build
+*.out
+*.test
+
+# 🧰 Carpetas de build opcionales
+/bin/
+/build/
+
+# 🧠 Archivos temporales
+*.log
+*.tmp
+
+# 🧾 VS Code
+.vscode/
+
+# 🧾 Go workspace (opcional)
+go.work
+go.work.sum
